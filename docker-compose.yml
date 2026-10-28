@@ -2,8 +2,8 @@ services:
   crcweb:
     container_name: crcweb
     # ---- 方式一：用 GitHub Actions 构建好的镜像（推荐，NAS 无需放源码）----
-    # 把 <用户名>/<仓库> 换成你自己的 GHCR 路径后取消下行注释、注释掉 build:
-    # image: ghcr.io/<用户名>/crcweb:latest
+    # 把 zeng-qh/crcweb 换成你自己的 GHCR 路径后取消下行注释、注释掉 build:
+    # image: ghcr.io/zeng-qh/crcweb:latest
     # ---- 方式二：本地构建（需把 CrcWeb 项目目录整个上传到 NAS）----
     build: .
     ports:

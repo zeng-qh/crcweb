@@ -59,7 +59,7 @@ dotnet run --urls "http://localhost:5173"
 ### 方式一：GitHub Actions 自动构建镜像（推荐）
 
 1. 把 `CrcWeb` 目录作为仓库根推到 GitHub（`.github/workflows` 已就位）；
-2. 推送到 `main` 分支或打 `v*` 标签即自动构建并发布到 GHCR（`ghcr.io/<用户名>/<仓库>:latest`），QEMU 交叉构建 arm64，**NAS 上无需装 .NET SDK**；
+2. 推送到 `main` 分支或打 `v*` 标签即自动构建并发布到 GHCR（`ghcr.io/zeng-qh/crcweb:latest`），QEMU 交叉构建 arm64，**NAS 上无需装 .NET SDK**；
 3. 首次构建后在 GitHub 仓库 Packages 设置中把镜像改为 Public，或在 NAS 上 `docker login ghcr.io`。
 
 ### 方式二：飞牛 fnOS 界面部署
@@ -78,7 +78,7 @@ docker compose up -d --build      # 或 docker-compose up -d --build
 若用 GHCR 镜像，改 compose 中 `image:` 行后 `docker compose pull && docker compose up -d`，或直接：
 
 ```bash
-docker run -d --name crcweb --restart unless-stopped -p 5173:8080 ghcr.io/<用户名>/crcweb:latest
+docker run -d --name crcweb --restart unless-stopped -p 5173:8080 ghcr.io/zeng-qh/crcweb:latest
 ```
 
 ### 说明
@@ -94,7 +94,7 @@ docker run -d --name crcweb --restart unless-stopped -p 5173:8080 ghcr.io/<用�
 ```yaml
 services:
   crcweb:
-    image: ghcr.io/<用户名>/crcweb:latest
+    image: ghcr.io/zeng-qh/crcweb:latest
     container_name: crcweb
     ports:
       - "5173:8080"
