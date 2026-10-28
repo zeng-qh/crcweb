@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CRC（循环冗余校验）在线计算</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <main class="container">
+        <header class="head">
+            <div>
+                <h1>CRC（循环冗余校验）在线计算</h1>
+                <p class="sub">分栏布局：左侧输入参数，右侧即时结果</p>
+            </div>
+        </header>
+
+        <div class="workbench">
+            <section class="card col-input">
+                <div class="row">
+                    <span class="label">输入类型：</span>
+                    <label class="radio"><input type="radio" name="inputType" value="hex" checked /> Hex</label>
+                    <label class="radio"><input type="radio" name="inputType" value="ascii" /> Ascii</label>
+                </div>
+
+                <div class="row column row-data">
+                    <label class="label" for="data">需要校验的数据：</label>
+                    <textarea id="data" rows="3" placeholder="输入的数据为16进制，例如：31 32 33 34">31 32 33 34</textarea>
+                </div>
+
+                <div class="row column">
+                    <label class="label" for="model-search">参数模型 NAME（输入可模糊查询）：</label>
+                    <div class="combo" id="model-combo">
+                        <input type="text" id="model-search" autocomplete="off"
+                               placeholder="输入关键字模糊查询，如 modbus、x25、crc-8" />
+                        <div id="model-list" class="combo-list" hidden></div>
+                    </div>
+                    <select id="model" hidden></select>
+                </div>
+
+                <div class="grid">
+                    <div class="field">
+                        <label for="width">宽度 WIDTH</label>
+                        <input type="number" id="width" min="1" max="32" value="16" />
+                    </div>
+                    <div class="field">
+                        <label for="poly">多项式 POLY（Hex）</label>
+                        <input type="text" id="poly" value="8005" />
+                    </div>
+                    <div class="field">
+                        <label for="init">初始值 INIT（Hex）</label>
+                        <input type="text" id="init" value="FFFF" />
+                    </div>
+                    <div class="field">
+                        <label for="xorout">异或值 XOROUT（Hex）</label>
+                        <input type="text" id="xorout" value="0000" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label class="check"><input type="checkbox" id="refin" checked /> 输入数据反转（REFIN）</label>
+                    <label class="check"><input type="checkbox" id="refout" checked /> 输出数据反转（REFOUT）</label>
+                </div>
+
+                <div class="actions">
+                    <button id="calc" type="button">计 算</button>
+                    <span id="error" class="error" role="status" aria-live="polite"></span>
+                </div>
+            </section>
+
+            <section class="card result col-result">
+                <div class="row column">
+                    <div class="label-row">
+                        <label class="label">校验计算结果（Hex）：</label>
+                        <button type="button" class="copy-btn" data-copy="hex">复制</button>
+                    </div>
+                    <div id="hex" class="output">—</div>
+                </div>
+                <p class="hint hint-warn">高位在左低位在右，使用时请注意高低位顺序！！！</p>
+                <p class="hint">“复制”按钮与点击大小端徽章均复制整帧（数据 + 校验值）：Hex 输入时为 xx xx 字节对，可直接粘贴到串口工具发送；点“小端”徽章为低字节在前（MODBUS 等协议）。</p>
+                <div class="row endian-row">
+                    <div class="endian-item"><span class="label">大端（高位在左）：</span><span id="be" class="mono endian-val">—</span></div>
+                    <div class="endian-item"><span class="label">小端（低位在右）：</span><span id="le" class="mono endian-val">—</span></div>
+                </div>
+                <div class="row column">
+                    <label class="label">校验计算结果（Bin）：</label>
+                    <div id="bin" class="output mono">—</div>
+                </div>
+
+                <div class="row column special-block">
+                    <label class="label">特殊校验：</label>
+                    <div class="table-wrap">
+                        <table id="special-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-ck">启用</th>
+                                    <th>校验类型</th>
+                                    <th>计算规则</th>
+                                    <th>结果（Hex）</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="ck-cell"><input type="checkbox" id="ck-sum" checked aria-label="启用累加和 SUM 低 8 位校验" /></td>
+                                    <td>累加和 SUM（低 8 位）</td>
+                                    <td class="rule">所有字节相加，取低 8 位</td>
+                                    <td id="sum" class="mono special-val val-empty">—</td>
+                                </tr>
+                                <tr>
+                                    <td class="ck-cell"><input type="checkbox" id="ck-sumh" checked aria-label="启用累加和 SUM 高 8 位校验" /></td>
+                                    <td>累加和 SUM（高 8 位）</td>
+                                    <td class="rule">(SUM &gt;&gt; 8) &amp; 0xFF，双字节场景先发高字节</td>
+                                    <td id="sumh" class="mono special-val val-empty">—</td>
+                                </tr>
+                                <tr>
+                                    <td class="ck-cell"><input type="checkbox" id="ck-bcc" checked aria-label="启用异或校验 BCC" /></td>
+                                    <td>异或校验 BCC</td>
+                                    <td class="rule">所有字节逐一异或（初始 0）</td>
+                                    <td id="bcc" class="mono special-val val-empty">—</td>
+                                </tr>
+                                <tr>
+                                    <td class="ck-cell"><input type="checkbox" id="ck-lrc" checked aria-label="启用纵向冗余校验 LRC" /></td>
+                                    <td>纵向冗余 LRC</td>
+                                    <td class="rule">(0x100 − SUM) &amp; 0xFF，MODBUS ASCII 用法</td>
+                                    <td id="lrc" class="mono special-val val-empty">—</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="hint">四项默认启用，结果随计算自动填充；取消勾选可隐藏对应行。点击“结果”格即复制整帧（数据 + 校验值），可直接粘贴到串口工具发送。</p>
+                </div>
+            </section>
+        </div>
+
+        <details class="card knowledge">
+            <summary>CRC 参数模型小知识</summary>
+            <p><b>NAME</b>：参数模型名称。</p>
+            <p><b>WIDTH</b>：宽度，即 CRC 比特数。</p>
+            <p><b>POLY</b>：生成项的简写，以 16 进制表示（如 CRC-32 即 0x04C11DB7，省略最高位的“1”）。</p>
+            <p><b>INIT</b>：算法开始时寄存器的初始化预置值。</p>
+            <p><b>REFIN</b>：待测数据的每个字节是否按位反转。</p>
+            <p><b>REFOUT</b>：计算完成后、异或输出前，整个数据是否按位反转。</p>
+            <p><b>XOROUT</b>：计算结果与此参数异或后得到最终的 CRC 值。</p>
+            <p><b>累加和 SUM</b>：将数据流中所有字节相加，取低 8 位作为校验值；高 8 位取总和低 16 位中的高字节（(SUM &gt;&gt; 8) &amp; 0xFF），用于双字节累加和传输场景（先高后低）。计算简单、占用资源少，适合嵌入式通信。</p>
+            <p><b>BCC（异或校验）</b>：对数据流中所有字节逐一异或（初始值 0），也称块校验字符 / 纵向奇偶校验，广泛用于工业通信协议。</p>
+            <p><b>LRC（纵向冗余校验）</b>：所有字节之和的二补码，即 (0x100 − SUM) 的低 8 位，MODBUS ASCII 协议使用的正是这种 LRC。</p>
+            <p class="hint">复制数据时请注意字符串首尾的一些不可见字符！</p>
+        </details>
+
+        <section class="card">
+            <h2>常见 CRC 参数模型</h2>
+            <div class="table-wrap">
+                <table id="models-table">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>多项式公式</th>
+                            <th>宽度</th>
+                            <th>多项式</th>
+                            <th>初始值</th>
+                            <th>结果异或值</th>
+                            <th>输入反转</th>
+                            <th>输出反转</th>
+                            <th>用途</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <p class="hint">点击某一行可将参数一键填入左侧输入框。</p>
+        </section>
+    </main>
+    <span id="copy-live" class="sr-only" aria-live="polite"></span>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

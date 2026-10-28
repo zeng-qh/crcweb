@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>CrcWeb</RootNamespace>
+    <AssemblyName>CrcWeb</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- 生成 XML 注释文件，供 Swagger 文档展示接口/模型说明 -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- 1591: 公开成员缺少 XML 注释的警告（按需注释，不强制） -->
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.3.1" />
+  </ItemGroup>
+
+</Project>

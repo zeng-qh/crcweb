@@ -1,0 +1,9 @@
+# 构建产物与本地文件不进入镜像构建上下文
+bin/
+obj/
+*.user
+.github/
+*.md
+docker-compose.yml
+Dockerfile
+.dockerignore
